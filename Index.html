@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoSaveHub - YouTube Downloader</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-white border-b py-4 px-6 shadow-sm">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-amber-600">Video Save Hub</h1>
+            <nav class="space-x-4 text-sm text-gray-600">
+                <a href="#" class="hover:text-amber-600">Home</a>
+                <a href="#" class="hover:text-amber-600">Downloaders</a>
+                <a href="#" class="hover:text-amber-600">FAQ</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl mx-auto px-4 py-12 flex-grow w-full">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold mb-2">YouTube Video Downloader</h2>
+            <p class="text-gray-600 text-sm">Paste a public YouTube link below to save the video as MP4.</p>
+        </div>
+
+        <!-- Download Box -->
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="Paste YouTube link here (e.g., https://youtube.com/...)" 
+                    class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                >
+                <button 
+                    id="downloadBtn" 
+                    onclick="fetchVideo()" 
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-lg transition text-sm cursor-pointer"
+                >
+                    Download
+                </button>
+            </div>
+            <div id="statusMessage" class="mt-4 text-sm text-center font-medium"></div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="resultContainer" class="mt-6 hidden bg-white p-6 rounded-xl shadow-md border border-gray-200 text-center">
+            <h3 class="font-bold text-lg mb-2">Video Ready!</h3>
+            <a id="downloadLink" href="#" target="_blank" class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition text-sm">
+                Download File Now
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-4 text-center text-xs text-gray-500">
+        &copy; 2026 VideoSaveHub. All rights reserved.
+    </footer>
+
+    <!-- JavaScript for API Integration -->
+    <script>
+        async function fetchVideo() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const statusMessage = document.getElementById('statusMessage');
+            const resultContainer = document.getElementById('resultContainer');
+            const downloadLink = document.getElementById('downloadLink');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            if (!urlInput) {
+                statusMessage.textContent = "Please enter a valid YouTube link!";
+                statusMessage.className = "mt-4 text-sm text-center font-medium text-red-500";
+                return;
+            }
+
+            // UI Loading State
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = "Processing...";
+            statusMessage.textContent = "Fetching video details, please wait...";
+            statusMessage.className = "mt-4 text-sm text-center font-medium text-blue-500";
+            resultContainer.classList.add('hidden');
+
+            try {
+                // Using Cobalt Public API as a backend substitute
+                const response = await fetch('https://api.cobalt.tools/api/json', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: urlInput
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'stream' || data.status === 'redirect' || data.url) {
+                    statusMessage.textContent = "Success! Your download link is ready.";
+                    statusMessage.className = "mt-4 text-sm text-center font-medium text-green-600";
+                    
+                    downloadLink.href = data.url || data.stream;
+                    resultContainer.classList.remove('hidden');
+                } else if (data.status === 'picker') {
+                    // Handle multiple qualities if available
+                    statusMessage.textContent = "Multiple formats found. Choose below:";
+                    statusMessage.className = "mt-4 text-sm text-center font-medium text-green-600";
+                    
+                    downloadLink.href = data.picker[0].url;
+                    resultContainer.classList.remove('hidden');
+                } else {
+                    throw new Error(data.text || "Failed to fetch video.");
+                }
+            } catch (error) {
+                statusMessage.textContent = "Error: Could not process this link. Try another video.";
+                statusMessage.className = "mt-4 text-sm text-center font-medium text-red-500";
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = "Download";
+            }
+        }
+    </script>
+</body>
+</html>
